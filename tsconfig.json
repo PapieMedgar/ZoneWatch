@@ -19,5 +19,5 @@
     "noUnusedLocals": false,
     "strictNullChecks": false
   },
-  "include": ["src", "vite-env.d.ts", "vite.config.ts"]
+  "include": ["src", "src/vite-env.d.ts", "vite.config.ts"]
 }
