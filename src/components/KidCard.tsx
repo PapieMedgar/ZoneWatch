@@ -3,15 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Shield, Clock, Phone } from "lucide-react";
+import { EditKidModal } from "./EditKidModal";
+import { DeleteKidDialog } from "./DeleteKidDialog";
+import { Kid } from "@/types/kids";
 
 interface KidCardProps {
-  name: string;
-  age: number;
-  status: "safe" | "warning" | "alert";
-  location: string;
-  lastSeen: string;
-  avatar?: string;
-  zonesCount: number;
+  kid: Kid;
+  onKidUpdated: () => void;
 }
 
 const statusConfig = {
@@ -32,15 +30,8 @@ const statusConfig = {
   },
 };
 
-export function KidCard({
-  name,
-  age,
-  status,
-  location,
-  lastSeen,
-  avatar,
-  zonesCount,
-}: KidCardProps) {
+export function KidCard({ kid, onKidUpdated }: KidCardProps) {
+  const { name, age, status, location, lastSeen, avatar, zonesCount } = kid;
   const config = statusConfig[status];
   const StatusIcon = config.icon;
 
@@ -99,6 +90,11 @@ export function KidCard({
           <Button variant="outline" size="sm">
             <Phone className="h-4 w-4" />
           </Button>
+        </div>
+        
+        <div className="flex gap-2 pt-2">
+          <EditKidModal kid={kid} onKidUpdated={onKidUpdated} />
+          <DeleteKidDialog kid={kid} onKidDeleted={onKidUpdated} />
         </div>
       </CardContent>
     </Card>

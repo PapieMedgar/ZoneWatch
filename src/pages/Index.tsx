@@ -1,39 +1,18 @@
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/NavBar";
 import { QuickStats } from "@/components/QuickStats";
 import { KidCard } from "@/components/KidCard";
 import { ZoneCard } from "@/components/ZoneCard";
+import { AddKidModal } from "@/components/AddKidModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Plus, Users, Shield, AlertTriangle } from "lucide-react";
+import { getKids } from "@/lib/firestore";
+import { Kid } from "@/types/kids";
+import { Toaster } from "@/components/ui/toaster";
 
 
-const mockKids = [
-  {
-    name: "Emma Johnson",
-    age: 8,
-    status: "safe" as const,
-    location: "Lincoln Elementary School",
-    lastSeen: "5 minutes ago",
-    zonesCount: 3,
-  },
-  {
-    name: "Jake Johnson",
-    age: 12,
-    status: "warning" as const,
-    location: "Near Maple Street Park",
-    lastSeen: "2 minutes ago",
-    zonesCount: 4,
-  },
-  {
-    name: "Sofia Johnson",
-    age: 6,
-    status: "safe" as const,
-    location: "Home - Living Room",
-    lastSeen: "1 minute ago",
-    zonesCount: 2,
-  },
-];
 
 const mockZones = [
   {
@@ -69,6 +48,32 @@ const mockZones = [
 ];
 
 const Index = () => {
+  const [kids, setKids] = useState<Kid[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadKids = async () => {
+    try {
+      setLoading(true);
+      console.log("Loading kids...");
+      const kidsData = await getKids();
+      console.log("Kids data received:", kidsData);
+      setKids(kidsData);
+    } catch (error) {
+      console.error("Error loading kids:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadKids();
+  }, []);
+
+  const handleKidUpdated = () => {
+    console.log("handleKidUpdated called - refreshing kids list");
+    loadKids();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
       <Navbar />
@@ -135,16 +140,23 @@ const Index = () => {
                   Real-time location and safety status
                 </p>
               </div>
-              <Button variant="outline">
-                <Users className="h-4 w-4" />
-                Manage Kids
-              </Button>
+              <AddKidModal onKidAdded={handleKidUpdated} />
             </div>
 
             <div className="space-y-4">
-              {mockKids.map((kid, index) => (
-                <KidCard key={index} {...kid} />
-              ))}
+              {loading ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Loading kids...</p>
+                </div>
+              ) : kids.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No kids added yet. Add your first child!</p>
+                </div>
+              ) : (
+                kids.map((kid) => (
+                  <KidCard key={kid.id} kid={kid} onKidUpdated={handleKidUpdated} />
+                ))
+              )}
             </div>
           </div>
 
@@ -219,6 +231,8 @@ const Index = () => {
           </CardContent>
         </Card>
       </section>
+      
+      <Toaster />
     </div>
   );
 };
