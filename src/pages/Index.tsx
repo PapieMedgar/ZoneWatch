@@ -4,52 +4,28 @@ import { QuickStats } from "@/components/QuickStats";
 import { KidCard } from "@/components/KidCard";
 import { ZoneCard } from "@/components/ZoneCard";
 import { AddKidModal } from "@/components/AddKidModal";
+import { AddZoneModal } from "@/components/AddZoneModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Plus, Users, Shield, AlertTriangle } from "lucide-react";
-import { getKids } from "@/lib/firestore";
+import { getKids, getZones, getRecentActivity } from "@/lib/firestore";
 import { Kid } from "@/types/kids";
+import { Zone } from "@/types/zone";
+import { Activity } from "@/types/activity";
 import { Toaster } from "@/components/ui/toaster";
 
 
 
-const mockZones = [
-  {
-    name: "Home Safe Zone",
-    address: "1234 Maple Street, Springfield",
-    radius: 100,
-    type: "home" as const,
-    activeKids: 1,
-    totalKids: 3,
-    createdAt: "2 weeks ago",
-    isActive: true,
-  },
-  {
-    name: "Lincoln Elementary",
-    address: "567 Oak Avenue, Springfield",
-    radius: 150,
-    type: "school" as const,
-    activeKids: 1,
-    totalKids: 2,
-    createdAt: "1 month ago",
-    isActive: true,
-  },
-  {
-    name: "Grandma's House",
-    address: "890 Pine Street, Springfield",
-    radius: 75,
-    type: "custom" as const,
-    activeKids: 0,
-    totalKids: 3,
-    createdAt: "3 weeks ago",
-    isActive: true,
-  },
-];
+// Zones will be loaded from Firestore
 
 const Index = () => {
   const [kids, setKids] = useState<Kid[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [zonesLoading, setZonesLoading] = useState(true);
+  const [activity, setActivity] = useState<Activity[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
 
   const loadKids = async () => {
     try {
@@ -65,13 +41,44 @@ const Index = () => {
     }
   };
 
+  const loadZones = async () => {
+    try {
+      setZonesLoading(true);
+      const zonesData = await getZones();
+      setZones(zonesData);
+    } catch (error) {
+      console.error("Error loading zones:", error);
+    } finally {
+      setZonesLoading(false);
+    }
+  };
+
+  const loadActivity = async () => {
+    try {
+      setActivityLoading(true);
+      const items = await getRecentActivity(10);
+      setActivity(items);
+    } catch (error) {
+      console.error("Error loading activity:", error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadKids();
+    loadZones();
+    loadActivity();
   }, []);
 
   const handleKidUpdated = () => {
     console.log("handleKidUpdated called - refreshing kids list");
     loadKids();
+  };
+
+  const handleZoneUpdated = () => {
+    loadZones();
+    loadActivity();
   };
 
   return (
@@ -106,10 +113,7 @@ const Index = () => {
                   <MapPin className="h-5 w-5" />
                   View Live Map
                 </Button>
-                <Button variant="safety" size="lg" className="text-base px-8">
-                  <Plus className="h-5 w-5" />
-                  Create New Zone
-                </Button>
+                <AddZoneModal onZoneAdded={handleZoneUpdated} />
               </div>
             </div>
 
@@ -123,7 +127,7 @@ const Index = () => {
 
       {/* Quick Stats */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <QuickStats />
+        <QuickStats kids={kids} zones={zones} />
       </section>
 
       {/* Main Content Grid */}
@@ -171,16 +175,23 @@ const Index = () => {
                   Manage location boundaries and notifications
                 </p>
               </div>
-              <Button variant="safety">
-                <Plus className="h-4 w-4" />
-                New Zone
-              </Button>
+              <AddZoneModal onZoneAdded={handleZoneUpdated} />
             </div>
 
             <div className="space-y-4">
-              {mockZones.map((zone, index) => (
-                <ZoneCard key={index} {...zone} />
-              ))}
+              {zonesLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Loading zones...</p>
+                </div>
+              ) : zones.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No zones created yet. Create your first zone!</p>
+                </div>
+              ) : (
+                zones.map((zone) => (
+                  <ZoneCard key={zone.id} {...zone} onZoneUpdated={handleZoneUpdated} />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -196,38 +207,40 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 rounded-full bg-warning-zone"></div>
-              <div className="flex-1">
-                <p className="font-medium">Jake approaching zone boundary</p>
-                <p className="text-sm text-muted-foreground">
-                  Maple Street Park - 2 minutes ago
-                </p>
-              </div>
-              <Badge variant="outline">Warning</Badge>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 rounded-full bg-safe-zone"></div>
-              <div className="flex-1">
-                <p className="font-medium">Emma arrived at school</p>
-                <p className="text-sm text-muted-foreground">
-                  Lincoln Elementary - 1 hour ago
-                </p>
-              </div>
-              <Badge className="bg-safe-zone text-white border-0">Safe</Badge>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 rounded-full bg-safe-zone"></div>
-              <div className="flex-1">
-                <p className="font-medium">Sofia entered home zone</p>
-                <p className="text-sm text-muted-foreground">
-                  Home Safe Zone - 2 hours ago
-                </p>
-              </div>
-              <Badge className="bg-safe-zone text-white border-0">Safe</Badge>
-            </div>
+            {activityLoading ? (
+              <div className="text-center py-6 text-muted-foreground">Loading activity...</div>
+            ) : activity.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">No recent activity.</div>
+            ) : (
+              activity.map((item) => {
+                const dotColor =
+                  item.severity === "danger"
+                    ? "bg-danger-zone"
+                    : item.severity === "warning"
+                    ? "bg-warning-zone"
+                    : item.severity === "safe"
+                    ? "bg-safe-zone"
+                    : "bg-primary";
+                const when = (() => {
+                  const d = item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt);
+                  const diff = Math.floor((Date.now() - d.getTime()) / 60000);
+                  if (diff <= 0) return "Just now";
+                  if (diff < 60) return `${diff} minutes ago`;
+                  const h = Math.floor(diff / 60);
+                  return `${h} hour${h > 1 ? "s" : ""} ago`;
+                })();
+                return (
+                  <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+                    <div className={`h-2 w-2 rounded-full ${dotColor}`}></div>
+                    <div className="flex-1">
+                      <p className="font-medium">{item.message}</p>
+                      <p className="text-sm text-muted-foreground">{when}</p>
+                    </div>
+                    <Badge variant="outline">{item.severity}</Badge>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </section>

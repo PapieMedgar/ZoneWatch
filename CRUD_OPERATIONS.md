@@ -90,9 +90,9 @@ The application uses Firebase Firestore with the following structure:
 ## Toast Notifications
 
 All operations provide feedback through toast notifications:
-- ✅ Success messages for completed operations
-- ❌ Error messages for failed operations
-- ⚠️ Validation messages for form errors
+- Success messages for completed operations
+- Error messages for failed operations
+- Validation messages for form errors
 
 ## Components Structure
 

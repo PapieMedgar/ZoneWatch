@@ -1,17 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Users, Clock, Settings, Trash2 } from "lucide-react";
+import { MapPin, Users, Clock } from "lucide-react";
+import { EditZoneModal } from "./EditZoneModal";
+import { DeleteZoneDialog } from "./DeleteZoneDialog";
+import { Zone } from "@/types/zone";
 
-interface ZoneCardProps {
-  name: string;
-  address: string;
-  radius: number;
-  type: "home" | "school" | "custom";
-  activeKids: number;
-  totalKids: number;
-  createdAt: string;
-  isActive: boolean;
+interface ZoneCardProps extends Zone {}
+interface ZoneCardExtraProps {
+  onZoneUpdated?: () => void;
 }
 
 const zoneTypeConfig = {
@@ -29,17 +26,15 @@ const zoneTypeConfig = {
   },
 };
 
-export function ZoneCard({
-  name,
-  address,
-  radius,
-  type,
-  activeKids,
-  totalKids,
-  createdAt,
-  isActive,
-}: ZoneCardProps) {
+export function ZoneCard(props: ZoneCardProps & ZoneCardExtraProps) {
+  const { id, name, address, radius, type, activeKids, totalKids, createdAt, isActive, onZoneUpdated } = props as any;
   const config = zoneTypeConfig[type];
+  const createdLabel =
+    typeof createdAt === "string"
+      ? createdAt
+      : createdAt instanceof Date
+      ? createdAt.toLocaleString()
+      : "";
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-soft">
@@ -62,16 +57,7 @@ export function ZoneCard({
             </div>
           </div>
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm">
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <DeleteZoneDialog zone={{ id, name, address, radius, type, activeKids, totalKids, createdAt: createdAt as any, isActive }} onZoneDeleted={onZoneUpdated || (() => {})} />
           </div>
         </div>
       </CardHeader>
@@ -96,7 +82,7 @@ export function ZoneCard({
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Created {createdAt}</span>
+            <span className="text-muted-foreground">Created {createdLabel}</span>
           </div>
         </div>
 
@@ -105,9 +91,7 @@ export function ZoneCard({
             <MapPin className="h-4 w-4" />
             View on Map
           </Button>
-          <Button variant="outline" size="sm">
-            Edit Zone
-          </Button>
+          <EditZoneModal zone={{ id, name, address, radius, type, activeKids, totalKids, createdAt: createdAt as any, isActive }} onZoneUpdated={onZoneUpdated || (() => {})} />
         </div>
       </CardContent>
     </Card>
