@@ -15,6 +15,7 @@ import { Zone } from "@/types/zone";
 import { Activity } from "@/types/activity";
 import { Toaster } from "@/components/ui/toaster";
 import { computeGeofenceStatus, statusFromGeofence } from "@/lib/utils";
+import { loadSettings, onSettingsUpdated } from "@/lib/settings";
 
 
 
@@ -27,6 +28,7 @@ const Index = () => {
   const [zonesLoading, setZonesLoading] = useState(true);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [settings, setSettings] = useState(loadSettings());
 
   const loadKids = async () => {
     try {
@@ -81,16 +83,19 @@ const Index = () => {
     const unsubActivity = subscribeActivity((activityLive) => {
       setActivity(activityLive.slice(0, 10));
     });
+    const off = onSettingsUpdated((s) => setSettings(s));
 
     return () => {
       unsubKids?.();
       unsubZones?.();
       unsubActivity?.();
+      off?.();
     };
   }, []);
 
   // Geofencing orchestration: recompute statuses whenever kids or zones change
   useEffect(() => {
+    if (!settings.geofencingEnabled) return;
     if (kids.length === 0 || zones.length === 0) return;
 
     const nowLabel = "Just now";
