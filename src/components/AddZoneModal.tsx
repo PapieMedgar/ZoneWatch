@@ -67,7 +67,7 @@ export function AddZoneModal({ onZoneAdded, buttonLabel = "New Zone" }: AddZoneM
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="safety" className="text-base px-4" onClick={() => setOpen(true)}>
+        <Button type="button" variant="safety" className="text-base px-4 relative z-10" onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4" />
           {buttonLabel}
         </Button>
