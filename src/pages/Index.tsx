@@ -85,11 +85,27 @@ const Index = () => {
     });
     const off = onSettingsUpdated((s) => setSettings(s));
 
+    // Fallback: refresh zones/activity when a global zone:refresh is dispatched
+    const onZoneRefresh = () => {
+      loadZones();
+      loadActivity();
+    };
+    window.addEventListener("zone:refresh", onZoneRefresh as EventListener);
+
+    const onAllRefresh = () => {
+      loadKids();
+      loadZones();
+      loadActivity();
+    };
+    window.addEventListener("all:refresh", onAllRefresh as EventListener);
+
     return () => {
       unsubKids?.();
       unsubZones?.();
       unsubActivity?.();
       off?.();
+      window.removeEventListener("zone:refresh", onZoneRefresh as EventListener);
+      window.removeEventListener("all:refresh", onAllRefresh as EventListener);
     };
   }, []);
 
@@ -229,7 +245,10 @@ const Index = () => {
                   <MapPin className="h-5 w-5" />
                   View Live Map
                 </Button>
-                <AddZoneModal onZoneAdded={handleZoneUpdated} />
+                <AddZoneModal buttonLabel="Add Zone" onZoneAdded={() => {
+                  handleZoneUpdated();
+                  window.dispatchEvent(new Event("zone:refresh"));
+                }} />
               </div>
             </div>
 

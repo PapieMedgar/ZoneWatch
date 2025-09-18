@@ -19,9 +19,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AddZoneModalProps {
   onZoneAdded: () => void;
+  buttonLabel?: string;
 }
 
-export function AddZoneModal({ onZoneAdded }: AddZoneModalProps) {
+export function AddZoneModal({ onZoneAdded, buttonLabel = "New Zone" }: AddZoneModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreateZoneData>({
@@ -56,12 +57,19 @@ export function AddZoneModal({ onZoneAdded }: AddZoneModalProps) {
     }
   };
 
+  // Allow opening the modal programmatically (optional)
+  // e.g., window.dispatchEvent(new Event("zone:add"))
+  // This helps if any parent wants to trigger it imperatively.
+  if (typeof window !== "undefined") {
+    window.addEventListener("zone:add", () => setOpen(true), { once: true });
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="safety" className="text-base px-4">
+        <Button variant="safety" className="text-base px-4" onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4" />
-          New Zone
+          {buttonLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
