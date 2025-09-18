@@ -46,7 +46,7 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden sm:flex items-center gap-3">
-            <AddZoneModal onZoneAdded={() => { /* Index page reloads zones via subscription */ }} />
+            <AddZoneModal onZoneAdded={() => { window.dispatchEvent(new Event("zone:refresh")); }} />
 
             <div className="relative">
               <DropdownMenu>
@@ -134,7 +134,7 @@ export function Navbar() {
         {/* Mobile Menu */}
         {mobileOpen && (
           <div className="sm:hidden flex flex-col gap-2 pb-4 border-t border-border mt-2">
-            <AddZoneModal onZoneAdded={() => {}} />
+            <AddZoneModal onZoneAdded={() => { window.dispatchEvent(new Event("zone:refresh")); }} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-full">
