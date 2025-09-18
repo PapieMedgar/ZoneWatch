@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { subscribeActivity } from "@/lib/firestore";
 import { Activity } from "@/types/activity";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { loadSettings, onSettingsUpdated, saveSettings } from "@/lib/settings";
 
 export function Navbar() {
@@ -13,6 +14,7 @@ export function Navbar() {
   const [activity, setActivity] = useState<Activity[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(loadSettings());
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeActivity((items) => setActivity(items));
@@ -110,7 +112,7 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => setProfileOpen(true)}>
               <User className="h-5 w-5" />
             </Button>
           </div>
@@ -192,7 +194,7 @@ export function Navbar() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="sm" className="w-full">
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => setProfileOpen(true)}>
               <User className="h-5 w-5" />
               Profile
             </Button>
@@ -200,5 +202,32 @@ export function Navbar() {
         )}
       </div>
     </nav>
+    /* Profile Dialog */
+    <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>User Profile</DialogTitle>
+          <DialogDescription>Manage your profile and quick actions.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            Signed in: Guest (authentication not set up yet)
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="zone"
+              onClick={() => {
+                window.dispatchEvent(new Event("all:refresh"));
+                setProfileOpen(false);
+              }}
+            >
+              Reload Data
+            </Button>
+            <Button variant="outline" onClick={() => setProfileOpen(false)}>Close</Button>
+          </div>
+        </div>
+        <DialogFooter />
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -92,12 +92,20 @@ const Index = () => {
     };
     window.addEventListener("zone:refresh", onZoneRefresh as EventListener);
 
+    const onAllRefresh = () => {
+      loadKids();
+      loadZones();
+      loadActivity();
+    };
+    window.addEventListener("all:refresh", onAllRefresh as EventListener);
+
     return () => {
       unsubKids?.();
       unsubZones?.();
       unsubActivity?.();
       off?.();
       window.removeEventListener("zone:refresh", onZoneRefresh as EventListener);
+      window.removeEventListener("all:refresh", onAllRefresh as EventListener);
     };
   }, []);
 
