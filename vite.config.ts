@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => ({
       "e4500825722f.ngrok-free.app",
       "f343566175e0.ngrok-free.app",
       "42f18d2fae21.ngrok-free.app",
+      "95d0d2aef1cc.ngrok-free.app",
       "localhost",
       "127.0.0.1"
     ] // allow all external hosts, including ngrok
