@@ -237,7 +237,7 @@ const Index = () => {
                   <MapPin className="h-5 w-5" />
                   View Live Map
                 </Button>
-                <AddZoneModal onZoneAdded={() => {
+                <AddZoneModal buttonLabel="Add Zone" onZoneAdded={() => {
                   handleZoneUpdated();
                   window.dispatchEvent(new Event("zone:refresh"));
                 }} />
