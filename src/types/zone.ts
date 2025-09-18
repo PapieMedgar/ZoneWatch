@@ -4,6 +4,8 @@ export interface Zone {
   id: string;
   name: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   radius: number;
   type: ZoneType;
   activeKids: number;
@@ -15,6 +17,8 @@ export interface Zone {
 export interface CreateZoneData {
   name: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   radius: number;
   type: ZoneType;
   totalKids?: number;
@@ -24,6 +28,8 @@ export interface CreateZoneData {
 export interface UpdateZoneData {
   name?: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
   radius?: number;
   type?: ZoneType;
   activeKids?: number;

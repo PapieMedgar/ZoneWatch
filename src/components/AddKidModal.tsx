@@ -27,6 +27,8 @@ export function AddKidModal({ onKidAdded }: AddKidModalProps) {
     name: "",
     age: 0,
     location: "",
+    latitude: undefined,
+    longitude: undefined,
     avatar: "",
   });
   const { toast } = useToast();
@@ -128,6 +130,31 @@ export function AddKidModal({ onKidAdded }: AddKidModalProps) {
               placeholder="e.g., Home, School, Park"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                value={typeof formData.latitude === "number" ? formData.latitude : ""}
+                onChange={(e) => handleInputChange("latitude", e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                placeholder="e.g., 37.4219983"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                value={typeof formData.longitude === "number" ? formData.longitude : ""}
+                onChange={(e) => handleInputChange("longitude", e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                placeholder="e.g., -122.084"
+              />
+            </div>
           </div>
           
           <div className="space-y-2">

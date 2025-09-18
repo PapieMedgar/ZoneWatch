@@ -27,6 +27,8 @@ export function AddZoneModal({ onZoneAdded }: AddZoneModalProps) {
   const [formData, setFormData] = useState<CreateZoneData>({
     name: "",
     address: "",
+    latitude: undefined,
+    longitude: undefined,
     radius: 100,
     type: "home",
     totalKids: 0,
@@ -78,6 +80,36 @@ export function AddZoneModal({ onZoneAdded }: AddZoneModalProps) {
           <div className="space-y-2">
             <Label htmlFor="address">Address/Description *</Label>
             <Input id="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                value={typeof formData.latitude === "number" ? formData.latitude : ""}
+                onChange={(e) => {
+                  const v = e.target.value.trim();
+                  setFormData({ ...formData, latitude: v === "" ? undefined : parseFloat(v) });
+                }}
+                placeholder="e.g., 37.4219983"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                value={typeof formData.longitude === "number" ? formData.longitude : ""}
+                onChange={(e) => {
+                  const v = e.target.value.trim();
+                  setFormData({ ...formData, longitude: v === "" ? undefined : parseFloat(v) });
+                }}
+                placeholder="e.g., -122.084"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="radius">Radius (meters) *</Label>
