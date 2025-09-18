@@ -52,20 +52,26 @@ const statusConfig = {
 };
 
 export function KidCard({ kid, onKidUpdated }: KidCardProps) {
-  const { name, age, status, location, lastSeen, avatar, zonesCount } = kid;
+  const { name, age, status, location, lastSeen, avatar, zonesCount, latitude, longitude } = kid;
   const config = statusConfig[status];
   const StatusIcon = config.icon;
   const { toast } = useToast();
 
   const handleViewMap = () => {
-    // Open Google Maps with the kid's location
-    const encodedLocation = encodeURIComponent(location);
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+    let mapsUrl: string;
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    } else {
+      const encodedLocation = encodeURIComponent(location);
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+    }
     window.open(mapsUrl, '_blank');
     
     toast({
       title: "Opening Map",
-      description: `Viewing ${name}'s location: ${location}`,
+      description: typeof latitude === 'number' && typeof longitude === 'number'
+        ? `Viewing ${name}'s coordinates: ${latitude}, ${longitude}`
+        : `Viewing ${name}'s location: ${location}`,
     });
   };
 

@@ -4,6 +4,8 @@ export interface Kid {
   age: number;
   status: "safe" | "warning" | "alert";
   location: string;
+  latitude?: number;
+  longitude?: number;
   lastSeen: string;
   avatar?: string;
   zonesCount: number;
@@ -16,6 +18,8 @@ export interface CreateKidData {
   name: string;
   age: number;
   location: string;
+  latitude?: number;
+  longitude?: number;
   avatar?: string;
   parentId?: string;
 }
@@ -24,6 +28,8 @@ export interface UpdateKidData {
   name?: string;
   age?: number;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   avatar?: string;
   status?: "safe" | "warning" | "alert";
   lastSeen?: string;

@@ -6,7 +6,7 @@ import { EditZoneModal } from "./EditZoneModal";
 import { DeleteZoneDialog } from "./DeleteZoneDialog";
 import { Zone } from "@/types/zone";
 
-interface ZoneCardProps extends Zone {}
+type ZoneCardProps = Zone;
 interface ZoneCardExtraProps {
   onZoneUpdated?: () => void;
 }
@@ -27,14 +27,9 @@ const zoneTypeConfig = {
 };
 
 export function ZoneCard(props: ZoneCardProps & ZoneCardExtraProps) {
-  const { id, name, address, radius, type, activeKids, totalKids, createdAt, isActive, onZoneUpdated } = props as any;
+  const { id, name, address, latitude, longitude, radius, type, activeKids, totalKids, createdAt, isActive, onZoneUpdated } = props;
   const config = zoneTypeConfig[type];
-  const createdLabel =
-    typeof createdAt === "string"
-      ? createdAt
-      : createdAt instanceof Date
-      ? createdAt.toLocaleString()
-      : "";
+  const createdLabel = createdAt instanceof Date ? createdAt.toLocaleString() : "";
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-soft">
@@ -57,7 +52,7 @@ export function ZoneCard(props: ZoneCardProps & ZoneCardExtraProps) {
             </div>
           </div>
           <div className="flex gap-1">
-            <DeleteZoneDialog zone={{ id, name, address, radius, type, activeKids, totalKids, createdAt: createdAt as any, isActive }} onZoneDeleted={onZoneUpdated || (() => {})} />
+            <DeleteZoneDialog zone={{ id, name, address, latitude, longitude, radius, type, activeKids, totalKids, createdAt, isActive }} onZoneDeleted={onZoneUpdated || (() => {})} />
           </div>
         </div>
       </CardHeader>
@@ -87,11 +82,24 @@ export function ZoneCard(props: ZoneCardProps & ZoneCardExtraProps) {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="zone" size="sm" className="flex-1">
+          <Button
+            variant="zone"
+            size="sm"
+            className="flex-1"
+            onClick={() => {
+              let url: string;
+              if (typeof latitude === 'number' && typeof longitude === 'number') {
+                url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+              } else {
+                url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+              }
+              window.open(url, '_blank');
+            }}
+          >
             <MapPin className="h-4 w-4" />
             View on Map
           </Button>
-          <EditZoneModal zone={{ id, name, address, radius, type, activeKids, totalKids, createdAt: createdAt as any, isActive }} onZoneUpdated={onZoneUpdated || (() => {})} />
+          <EditZoneModal zone={{ id, name, address, latitude, longitude, radius, type, activeKids, totalKids, createdAt, isActive }} onZoneUpdated={onZoneUpdated || (() => {})} />
         </div>
       </CardContent>
     </Card>

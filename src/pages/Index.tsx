@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Plus, Users, Shield, AlertTriangle } from "lucide-react";
-import { getKids, getZones, getRecentActivity } from "@/lib/firestore";
+import { getKids, getZones, getRecentActivity, subscribeKids, subscribeZones, subscribeActivity, updateKid, updateZone, addActivity } from "@/lib/firestore";
 import { Kid } from "@/types/kids";
 import { Zone } from "@/types/zone";
 import { Activity } from "@/types/activity";
 import { Toaster } from "@/components/ui/toaster";
+import { computeGeofenceStatus, statusFromGeofence } from "@/lib/utils";
 
 
 
@@ -69,7 +70,89 @@ const Index = () => {
     loadKids();
     loadZones();
     loadActivity();
+
+    // Real-time subscriptions
+    const unsubKids = subscribeKids((kidsLive) => {
+      setKids(kidsLive);
+    });
+    const unsubZones = subscribeZones((zonesLive) => {
+      setZones(zonesLive);
+    });
+    const unsubActivity = subscribeActivity((activityLive) => {
+      setActivity(activityLive.slice(0, 10));
+    });
+
+    return () => {
+      unsubKids?.();
+      unsubZones?.();
+      unsubActivity?.();
+    };
   }, []);
+
+  // Geofencing orchestration: recompute statuses whenever kids or zones change
+  useEffect(() => {
+    if (kids.length === 0 || zones.length === 0) return;
+
+    const nowLabel = "Just now";
+
+    // For each kid, find best zone status (inside beats near beats outside)
+    kids.forEach(async (kid) => {
+      let bestStatus: "safe" | "warning" | "alert" = "alert";
+      let inAnyZone = false;
+
+      zones.forEach((zone) => {
+        if (!zone.isActive) return;
+        const { status } = computeGeofenceStatus(
+          kid.latitude,
+          kid.longitude,
+          zone.latitude,
+          zone.longitude,
+          zone.radius
+        );
+        const mapped = statusFromGeofence(status);
+        if (mapped === "safe") {
+          bestStatus = "safe";
+          inAnyZone = true;
+        } else if (mapped === "warning" && bestStatus !== "safe") {
+          bestStatus = "warning";
+        }
+      });
+
+      // Only update if status changed
+      if (kid.status !== bestStatus) {
+        await updateKid(kid.id, { status: bestStatus, lastSeen: nowLabel });
+        try {
+          await addActivity({
+            type: "kid",
+            action: "geofence",
+            message: `${kid.name} is ${bestStatus === "safe" ? "inside" : bestStatus === "warning" ? "near" : "outside"} zones`,
+            kidId: kid.id,
+            severity: bestStatus === "alert" ? "warning" : bestStatus === "safe" ? "safe" : "info",
+          });
+        } catch (e) {
+          console.warn("Failed to log geofence activity", e);
+        }
+      }
+    });
+
+    // For each zone, update activeKids count
+    zones.forEach(async (zone) => {
+      if (!zone.isActive) return;
+      const countInside = kids.filter((kid) => {
+        const { status } = computeGeofenceStatus(
+          kid.latitude,
+          kid.longitude,
+          zone.latitude,
+          zone.longitude,
+          zone.radius
+        );
+        return status === "inside";
+      }).length;
+      if ((zone.activeKids ?? 0) !== countInside) {
+        await updateZone(zone.id, { activeKids: countInside });
+      }
+    });
+  }, [kids, zones]);
 
   const handleKidUpdated = () => {
     console.log("handleKidUpdated called - refreshing kids list");
@@ -109,7 +192,15 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="zone" size="lg" className="text-base px-8">
+                <Button variant="zone" size="lg" className="text-base px-8" onClick={() => {
+                  if (kids.length > 0 && typeof kids[0].latitude === 'number' && typeof kids[0].longitude === 'number') {
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${kids[0].latitude},${kids[0].longitude}`, '_blank');
+                  } else if (zones.length > 0 && typeof zones[0].latitude === 'number' && typeof zones[0].longitude === 'number') {
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${zones[0].latitude},${zones[0].longitude}`, '_blank');
+                  } else {
+                    window.open('https://www.google.com/maps', '_blank');
+                  }
+                }}>
                   <MapPin className="h-5 w-5" />
                   View Live Map
                 </Button>
@@ -222,7 +313,7 @@ const Index = () => {
                     ? "bg-safe-zone"
                     : "bg-primary";
                 const when = (() => {
-                  const d = item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt);
+                  const d = item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt as unknown as string);
                   const diff = Math.floor((Date.now() - d.getTime()) / 60000);
                   if (diff <= 0) return "Just now";
                   if (diff < 60) return `${diff} minutes ago`;

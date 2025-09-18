@@ -35,6 +35,8 @@ export function EditKidModal({ kid, onKidUpdated }: EditKidModalProps) {
     name: kid.name,
     age: kid.age,
     location: kid.location,
+    latitude: kid.latitude,
+    longitude: kid.longitude,
     avatar: kid.avatar || "",
     status: kid.status,
   });
@@ -45,6 +47,8 @@ export function EditKidModal({ kid, onKidUpdated }: EditKidModalProps) {
       name: kid.name,
       age: kid.age,
       location: kid.location,
+      latitude: kid.latitude,
+      longitude: kid.longitude,
       avatar: kid.avatar || "",
       status: kid.status,
     });
@@ -143,6 +147,31 @@ export function EditKidModal({ kid, onKidUpdated }: EditKidModalProps) {
               placeholder="e.g., Home, School, Park"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                value={typeof formData.latitude === "number" ? formData.latitude : ""}
+                onChange={(e) => handleInputChange("latitude", e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                placeholder="e.g., 37.4219983"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                value={typeof formData.longitude === "number" ? formData.longitude : ""}
+                onChange={(e) => handleInputChange("longitude", e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                placeholder="e.g., -122.084"
+              />
+            </div>
           </div>
           
           <div className="space-y-2">
