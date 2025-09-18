@@ -198,12 +198,32 @@ const Index = () => {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button variant="zone" size="lg" className="text-base px-8" onClick={() => {
-                  if (kids.length > 0 && typeof kids[0].latitude === 'number' && typeof kids[0].longitude === 'number') {
-                    window.open(`https://www.google.com/maps/search/?api=1&query=${kids[0].latitude},${kids[0].longitude}`, '_blank');
-                  } else if (zones.length > 0 && typeof zones[0].latitude === 'number' && typeof zones[0].longitude === 'number') {
-                    window.open(`https://www.google.com/maps/search/?api=1&query=${zones[0].latitude},${zones[0].longitude}`, '_blank');
+                  // Prefer kid coordinates → zone coordinates → zone address → kid location label → maps home
+                  let url = '';
+                  const kidWithCoords = kids.find(k => typeof k.latitude === 'number' && typeof k.longitude === 'number');
+                  if (kidWithCoords) {
+                    url = `https://www.google.com/maps/search/?api=1&query=${kidWithCoords.latitude},${kidWithCoords.longitude}`;
                   } else {
-                    window.open('https://www.google.com/maps', '_blank');
+                    const zoneWithCoords = zones.find(z => typeof z.latitude === 'number' && typeof z.longitude === 'number');
+                    if (zoneWithCoords) {
+                      url = `https://www.google.com/maps/search/?api=1&query=${zoneWithCoords.latitude},${zoneWithCoords.longitude}`;
+                    } else {
+                      const zoneWithAddress = zones.find(z => z.address && z.address.trim().length > 0);
+                      if (zoneWithAddress) {
+                        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(zoneWithAddress.address)}`;
+                      } else {
+                        const kidWithLabel = kids.find(k => k.location && k.location.trim().length > 0);
+                        if (kidWithLabel) {
+                          url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(kidWithLabel.location)}`;
+                        } else {
+                          url = 'https://www.google.com/maps';
+                        }
+                      }
+                    }
+                  }
+                  const w = window.open(url, '_blank', 'noopener,noreferrer');
+                  if (!w) {
+                    window.location.assign(url);
                   }
                 }}>
                   <MapPin className="h-5 w-5" />
