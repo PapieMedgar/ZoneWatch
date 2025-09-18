@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8085,         // the port Vite will run on
     allowedHosts: [
       "all",
-      "e4500825722f.ngrok-free.app",
+      "505a21f1602d.ngrok-free.app",
       "localhost",
       "127.0.0.1"
     ] // allow all external hosts, including ngrok
