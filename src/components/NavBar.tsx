@@ -28,6 +28,7 @@ export function Navbar() {
   const unreadCount = useMemo(() => Math.min(activity.length, 9), [activity]);
 
   return (
+    <>
     <nav className="bg-card border-b border-border shadow-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -202,7 +203,7 @@ export function Navbar() {
         )}
       </div>
     </nav>
-    /* Profile Dialog */
+    {/* Profile Dialog */}
     <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
@@ -229,5 +230,6 @@ export function Navbar() {
         <DialogFooter />
       </DialogContent>
     </Dialog>
+    </>
   );
 }
