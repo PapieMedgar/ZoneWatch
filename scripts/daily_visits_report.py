@@ -26,7 +26,7 @@ def parse_date(date_str: Optional[str]) -> Optional[date]:
         raise SystemExit(f"Invalid date format '{date_str}'. Use YYYY-MM-DD.") from exc
 
 
-def build_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:
+def build_query(start_date: Optional[date], end_date: Optional[date], include_visit_response: bool) -> tuple[str, list]:
     where_clauses = [
         # Ensure we only count valid checkins associated with a visit response if required by schema
         # If visit_response is optional, LEFT JOIN will still allow counts
@@ -62,6 +62,12 @@ def build_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[s
     # - users: primary key in users_pk, display name in users_name_col
     # - checkins: references users via checkins_user_id_col, timestamp in checkins_time_col
     # - visit_response: references checkins via vr_checkin_id_col (optional)
+    vr_join = (
+        f" LEFT JOIN `{visit_response_table}` vr ON vr.`{vr_checkin_id_col}` = c.`{checkins_pk}`\n"
+        if include_visit_response
+        else ""
+    )
+
     query = f"""
         SELECT
             u.`{users_name_col}` AS user_name,
@@ -69,7 +75,7 @@ def build_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[s
             COUNT(c.`{checkins_pk}`) AS total_visits
         FROM `{users_table}` u
         JOIN `{checkins_table}` c ON c.`{checkins_user_id_col}` = u.`{users_pk}`
-        LEFT JOIN `{visit_response_table}` vr ON vr.`{vr_checkin_id_col}` = c.`{checkins_pk}`
+        {vr_join}
         WHERE {where_sql}
         GROUP BY u.`{users_name_col}`, DATE(c.`{checkins_time_col}`)
         ORDER BY u.`{users_name_col}` ASC, visit_date ASC
@@ -77,11 +83,34 @@ def build_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[s
     return query, params
 
 
+def table_exists(connection, table_name: str) -> bool:
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE() AND table_name = %s
+            """,
+            (table_name,),
+        )
+        count = cursor.fetchone()[0]
+        return bool(count)
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+
 def fetch_daily_visits(start_date: Optional[date], end_date: Optional[date]):
     connection = mysql.connector.connect(**DATABASE_CONFIG)
     try:
         cursor = connection.cursor(dictionary=True)
-        query, params = build_query(start_date, end_date)
+        # Determine if visit_response table exists; include LEFT JOIN only if present
+        visit_response_table = os.getenv("SALESYNC_TABLE_VISIT_RESPONSE", "visit_response")
+        include_vr = table_exists(connection, visit_response_table)
+        query, params = build_query(start_date, end_date, include_vr)
         cursor.execute(query, params)
         for row in cursor:
             yield {
