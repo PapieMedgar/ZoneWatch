@@ -86,7 +86,7 @@ def fetch_daily_visits(start_date: Optional[date], end_date: Optional[date]):
         for row in cursor:
             yield {
                 "user_name": row["user_name"],
-                "date": row["visit_date"].isoformat() if isinstance(row["visit_date"], (date, datetime)) else str(row["visit_date"]),
+                "date": row["visit_date"],
                 "total_visits": int(row["total_visits"]) if row["total_visits"] is not None else 0,
             }
     finally:
@@ -97,14 +97,49 @@ def fetch_daily_visits(start_date: Optional[date], end_date: Optional[date]):
         connection.close()
 
 
-def write_csv(rows, output_path: str):
+def write_pivot_csv(rows, output_path: str):
+    # Build set of users and map of date -> {user: count}
+    user_names: set[str] = set()
+    date_to_user_counts: dict[date, dict[str, int]] = {}
+
+    for row in rows:
+        user_name = str(row["user_name"]) if row["user_name"] is not None else ""
+        raw_date = row["date"]
+        if isinstance(raw_date, datetime):
+            d = raw_date.date()
+        elif isinstance(raw_date, date):
+            d = raw_date
+        else:
+            # Expecting ISO string 'YYYY-MM-DD' from DB driver; fallback to safe parse
+            try:
+                d = date.fromisoformat(str(raw_date))
+            except Exception:
+                # If parsing fails, skip this row to avoid corrupting CSV structure
+                continue
+
+        user_names.add(user_name)
+        if d not in date_to_user_counts:
+            date_to_user_counts[d] = {}
+        date_to_user_counts[d][user_name] = int(row.get("total_visits", 0) or 0)
+
+    # Prepare header: Date + sorted user names
+    sorted_users = sorted(user_names)
+    header = ["Date", *sorted_users]
+
+    # Prepare rows ordered by date ascending
+    ordered_dates = sorted(date_to_user_counts.keys())
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fieldnames = ["user_name", "date", "total_visits"]
     with open(output_path, mode="w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+        writer = csv.writer(csv_file)
+        writer.writerow(header)
+        for d in ordered_dates:
+            # Format like '14-Sep-25'
+            display_date = d.strftime("%d-%b-%y")
+            row_values = [display_date]
+            counts_for_day = date_to_user_counts.get(d, {})
+            for user in sorted_users:
+                row_values.append(counts_for_day.get(user, 0))
+            writer.writerow(row_values)
 
 
 def main():
@@ -116,7 +151,7 @@ def main():
     output_csv = sys.argv[3] if len(sys.argv) > 3 else os.path.join("reports", "daily_visits.csv")
 
     rows = list(fetch_daily_visits(start_date, end_date))
-    write_csv(rows, output_csv)
+    write_pivot_csv(rows, output_csv)
     print(f"Wrote {len(rows)} rows to {output_csv}")
 
 
